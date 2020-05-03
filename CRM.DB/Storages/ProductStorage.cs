@@ -12,10 +12,18 @@ namespace CRM.DB.Storages
 {
     public class ProductStorage
     {
-        private const string dbconnectionString = @"
-            Data Source=.\SQLEXPRESS;
-            Initial Catalog=DevEduHomeWork;
-            Integrated Security=True";
+		private const string dbconnectionString = @"Data Source=EVS1G-MASH1N3;
+			Initial Catalog=DevEduHomeWork;
+			Integrated Security=True;
+			Connect Timeout=30;
+			Encrypt=False;
+			TrustServerCertificate=False;
+			ApplicationIntent=ReadWrite;
+			MultiSubnetFailover=False";
+        //private const string dbconnectionString = @"
+        //    Data Source=.\SQLEXPRESS;
+        //    Initial Catalog=DevEduHomeWork;
+        //    Integrated Security=True";
         internal static class SpName
         {
             public const string ProductsGetAll = "Product_SelectAll";
