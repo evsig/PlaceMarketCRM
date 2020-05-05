@@ -12,7 +12,7 @@ namespace CRM.DB.Models
         public decimal Price { get; set; }
         public int TradeMarkId { get; set; }
         public int ModelId { get; set; }
-        public int CategoryId { get; set; }
+        public Category Category { get; set; }
         public int SubcategoryId { get; set; }
     }
 }

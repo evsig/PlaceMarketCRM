@@ -5,10 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Autofac" Version="5.1.4" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CRM.Core\CRM.Core.csproj" />
     <ProjectReference Include="..\CRM.DB\CRM.DB.csproj" />
   </ItemGroup>
 
