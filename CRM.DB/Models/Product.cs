@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace CRM.DB.Models
+﻿namespace CRM.DB.Models
 {
     public class Product
     {
@@ -16,11 +11,3 @@ namespace CRM.DB.Models
         public int SubcategoryId { get; set; }
     }
 }
-/*SELECT TOP (1000) [Id]
-      ,[Name]
-      ,[Price]
-      ,[TradeMarkId]
-      ,[ModelId]
-      ,[CategoryId]
-      ,[SubcategoryId]
-  FROM [DevEduHomeWork].[dbo].[Good]*/

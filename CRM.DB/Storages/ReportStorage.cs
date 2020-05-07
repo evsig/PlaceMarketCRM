@@ -151,24 +151,69 @@ namespace CRM.DB.Storages
             }
         }
 
-        public ValueTask<List<PointWithCash>> GetSelectCashInEachPoint()
+        public async ValueTask<List<PointWithCash>> GetSelectCashInEachPoint()
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                var result = await _connection.QueryAsync<PointWithCash>(
+                            SpName.GetSelectCashInEachPoint,
+                            null,
+                            commandType: CommandType.StoredProcedure);
+                return result.ToList();
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
         }
 
-        public ValueTask<List<PointWithCash>> GetSumSalesBetweenDates()
+        public async ValueTask<List<PointWithCash>> GetSumSalesBetweenDates(Period date)
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                DynamicParameters periodModelParams = new DynamicParameters(new { date.StartDate, date.EndDate });
+                var result = await _connection.QueryAsync<PointWithCash>(
+                                SpName.GetSumSalesBetweenDates,
+                                periodModelParams,
+                                commandType: CommandType.StoredProcedure);
+                return result.ToList();
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
         }
 
-        public ValueTask<List<PointWithCash>> GetSumSalesInEachPoint()
+        public async ValueTask<List<PointWithCash>> GetSumSalesInEachPoint()
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                var result = await _connection.QueryAsync<PointWithCash>(
+                           SpName.GetSumSalesInEachPoint,
+                           null,
+                           commandType: CommandType.StoredProcedure);
+                return result.ToList();
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
         }
 
-        public ValueTask<List<Cash>> GetSumSalesInRussiaAndAbroad()
+        public async ValueTask<List<Cash>> GetSumSalesInRussiaAndAbroad()
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                var result = await _connection.QueryAsync<Cash>(
+                           SpName.GetSumSalesInRussiaAndAbroad,
+                           null,
+                           commandType: CommandType.StoredProcedure);
+                return result.ToList();
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
         }
     }
 }
