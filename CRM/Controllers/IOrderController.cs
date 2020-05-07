@@ -9,7 +9,7 @@ namespace CRM.API.Controllers
     public interface IOrderController
     {
         ValueTask<ActionResult<OrderOutputModel>> AddOrder(OrderInputModel inputModel);
-        ValueTask<ActionResult<OrderOutputModel>> GetOrderWithDetails(int id);
-
+        ValueTask<ActionResult<OrderOutputModel>> GetOrderById(int id);
+        ValueTask<ActionResult<CashPointOutputModel>> GetCashInPoint();
     }
 }
