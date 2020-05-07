@@ -53,6 +53,9 @@ namespace CRM.DB.Storages
             public const string GetSumSalesBetweenDates = "GetSumSalesBetweenDates";
             public const string GetSumSalesInEachPoint = "GetSumSalesInEachPoint";
             public const string GetSumSalesInRussiaAndAbroad = "GetSumSalesInRussiaAndAbroad";
+            public const string OrderAdd = "Order_Add";
+            public const string OrderDetailsAdd = "OrderDetails_Add";
+            public const string GetOrderById = "Order_SelectById";
 
         }
 
@@ -69,12 +72,12 @@ namespace CRM.DB.Storages
                     SpName.OrderAdd,
                     parameters,
                     transaction: transaction,
-                    commandType: CommandType.CRMdProcedure);
+                    commandType: CommandType.StoredProcedure);
 
                 model.Id = OrderID.FirstOrDefault();
 
                 await AddOrderDetails(model.OrderDetails, (int)model.Id);
-                return await GetOrderWithDetailsById((int)model.Id);
+                return await GetOrderById((int)model.Id);
             }
             catch (InvalidOperationException ex)
             {
@@ -88,20 +91,20 @@ namespace CRM.DB.Storages
             {
                 foreach (OrderDetails orderDetails in models)
                 {
-                    int ProductId = orderDetails.Product.Id;
+                    int? ProductId = orderDetails.Product.Id;
                     DynamicParameters parameters = new DynamicParameters(new
                     {
                         orderId,
                         ProductId,
-                        orderDetails.Quantity,
-                        orderDetails.LocalPrice
+                        orderDetails.Count,
+                        orderDetails.Price
                     });
 
                     await connection.QueryAsync<int>(
                     SpName.OrderDetailsAdd,
                     parameters,
                     transaction: transaction,
-                    commandType: CommandType.CRMdProcedure);
+                    commandType: CommandType.StoredProcedure);
                 }
             }
             catch (InvalidOperationException ex)
@@ -110,31 +113,31 @@ namespace CRM.DB.Storages
             }
         }
 
-        public async ValueTask<Order> GetOrderWithDetailsById(int Id)
+        public async ValueTask<Order> GetOrderById(int Id)
         {
             try
             {
                 var orderDictionary = new Dictionary<int, Order>();
                 var result = await connection.QueryAsync<Order, Point, OrderDetails, Product, Category, Order>(
-                    SpName.OrderWithDetailsSelectById,
-                    (o, w, od, g, c) =>
+                    SpName.GetOrderById,
+                    (order, point, orderDetails, product, category) =>
                     {
                         Order orderEntry;
-                        if (!orderDictionary.TryGetValue((int)o.Id, out orderEntry))
+                        if (!orderDictionary.TryGetValue((int)order.Id, out orderEntry))
                         {
-                            orderEntry = o;
+                            orderEntry = order;
                             orderEntry.OrderDetails = new List<OrderDetails>();
                             orderDictionary.Add((int)orderEntry.Id, orderEntry);
                         }
-                        orderEntry.Point = w;
-                        orderEntry.OrderDetails.Add(od);
-                        od.Product = g;
-                        g.Category = c;
+                        orderEntry.Point = point;
+                        orderEntry.OrderDetails.Add(orderDetails);
+                        orderDetails.Product = product;
+                        product.Category = category;
                         return orderEntry;
                     },
                     param: new { Id },
                     transaction: transaction,
-                    commandType: CommandType.CRMdProcedure,
+                    commandType: CommandType.StoredProcedure,
                     splitOn: "Id");
                 return result.FirstOrDefault();
             }
@@ -144,69 +147,5 @@ namespace CRM.DB.Storages
             }
         }
 
-        public async ValueTask<List<PointTotalCost>> GetTotalCostByPoint()
-        {
-            try
-            {
-                var result = await connection.QueryAsync<decimal, PointTotalCost, PointTotalCost>(
-                    SpName.ProductTotalCostByPoint,
-                    (t, w) =>
-                    {
-                        PointTotalCost Point = w;
-                        Point.TotalMoney = t;
-                        return Point;
-                    },
-                    param: null,
-                    commandType: CommandType.CRMdProcedure,
-                    splitOn: "Id");
-                return result.ToList();
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw ex;
-            }
-        }
-        public async ValueTask<List<OrdersByDates>> GetOrdersByDates(DateTime FromDate, DateTime ToDate)
-        {
-            try
-            {
-                var result = await connection.QueryAsync<OrdersByDates, Point, Product, Category, int, decimal, OrdersByDates>(
-                    SpName.OrderByDates,
-                    (o, w, g, c, tq, tc) =>
-                    {
-                        OrdersByDates order = o;
-                        o.Point = w;
-                        o.TotalQuantity = tq;
-                        o.TotalCost = tc;
-                        o.Product = g;
-                        g.Category = c;
-                        return order;
-                    },
-                    param: new { FromDate, ToDate },
-                    commandType: CommandType.CRMdProcedure,
-                    splitOn: "Id,Id,Id,TotalQuantity,TotalCost");
-                return result.ToList();
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async ValueTask<Order> GetTotalCostByIsForeign()
-        {
-            try
-            {
-                var result = await connection.QueryAsync<Order>(
-                    SpName.TotalSumByIsForeign,
-                    param: null,
-                    commandType: CommandType.CRMdProcedure);
-                return result.FirstOrDefault();
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw ex;
-            }
-        }
     }
 }
