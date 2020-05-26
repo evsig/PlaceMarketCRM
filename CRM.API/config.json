@@ -1,0 +1,5 @@
+﻿{
+    "CRMApiUrl": "https://localhost:5501",
+    "DBConnectionString": "Data Source = (local); Initial Catalog = CRM; Integrated Security=True;",
+    "isProduction": "true"
+}

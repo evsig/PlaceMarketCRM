@@ -23,11 +23,10 @@ namespace CRM.DB.Storages
         }
         public void TransactionStart()
         {
-            if (this.connection == null)
-            {
-                connection = new SqlConnection("Data Source = (local); Initial Catalog = CRM; Integrated Security=True;");
+            if (this.connection == null) { 
+                connection = new SqlConnection("Data Source = (local); Initial Catalog = Store; Integrated Security=True;");
             }
-
+           
             connection.Open();
             transaction = this.connection.BeginTransaction();
         }
@@ -42,103 +41,70 @@ namespace CRM.DB.Storages
             connection?.Close();
         }
 
-        internal static class SpName
+        private static class SpName
         {
-            public const string GetProductsMostlySales = "GetProductsMostlySales";
-            public const string GetProductsNeverSale = "GetProductsNeverSale";
-            public const string GetProductsOnlyInStorage = "GetProductsOnlyInStorage";
-            public const string GetProductsOver = "GetProductsOver";
-            public const string GetCategoriesMoreFiveProducts = "GetCategoriesMoreFiveProducts";
-            public const string GetSelectCashInEachPoint = "GetSelectCashInEachPoint";
-            public const string GetSumSalesBetweenDates = "GetSumSalesBetweenDates";
-            public const string GetSumSalesInEachPoint = "GetSumSalesInEachPoint";
-            public const string GetSumSalesInRussiaAndAbroad = "GetSumSalesInRussiaAndAbroad";
-            public const string OrderAdd = "Order_Add";
-            public const string OrderDetailsAdd = "OrderDetails_Add";
-            public const string GetOrderById = "Order_SelectById";
-
+            public const string SumSalesBetweenDates = "SumSalesBetweenDates";
+            public const string ProductCashInPoint = "Product_CashInPoint";
+            public const string SalesInSomeCountry = "SalesInSomeCountry";
         }
 
-        public async ValueTask<Order> AddOrder(Order model)
+        public async ValueTask<List<CashInPoint>> GetCashInPoint()
         {
             try
             {
-                DynamicParameters parameters = new DynamicParameters(new
-                {
-                    PointId = model.Point.Id
-                });
-
-                var OrderID = await connection.QueryAsync<int>(
-                    SpName.OrderAdd,
-                    parameters,
-                    transaction: transaction,
-                    commandType: CommandType.StoredProcedure);
-
-                model.Id = OrderID.FirstOrDefault();
-
-                await AddOrderDetails(model.OrderDetails, (int)model.Id);
-                return await GetOrderById((int)model.Id);
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async ValueTask AddOrderDetails(List<OrderDetails> models, int orderId)
-        {
-            try
-            {
-                foreach (OrderDetails orderDetails in models)
-                {
-                    int? ProductId = orderDetails.Product.Id;
-                    DynamicParameters parameters = new DynamicParameters(new
+                var result = await connection.QueryAsync<decimal, CashInPoint, CashInPoint>(
+                    SpName.ProductCashInPoint,
+                    (t, w) =>
                     {
-                        orderId,
-                        ProductId,
-                        orderDetails.Count,
-                        orderDetails.Price
-                    });
-
-                    await connection.QueryAsync<int>(
-                    SpName.OrderDetailsAdd,
-                    parameters,
-                    transaction: transaction,
-                    commandType: CommandType.StoredProcedure);
-                }
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async ValueTask<Order> GetOrderById(int Id)
-        {
-            try
-            {
-                var orderDictionary = new Dictionary<int, Order>();
-                var result = await connection.QueryAsync<Order, Point, OrderDetails, Product, Category, Order>(
-                    SpName.GetOrderById,
-                    (order, point, orderDetails, product, category) =>
-                    {
-                        Order orderEntry;
-                        if (!orderDictionary.TryGetValue((int)order.Id, out orderEntry))
-                        {
-                            orderEntry = order;
-                            orderEntry.OrderDetails = new List<OrderDetails>();
-                            orderDictionary.Add((int)orderEntry.Id, orderEntry);
-                        }
-                        orderEntry.Point = point;
-                        orderEntry.OrderDetails.Add(orderDetails);
-                        orderDetails.Product = product;
-                        product.Category = category;
-                        return orderEntry;
+                        CashInPoint store = w;
+                        store.TotalMoney = t;
+                        return store;
                     },
-                    param: new { Id },
-                    transaction: transaction,
+                    param: null,
                     commandType: CommandType.StoredProcedure,
                     splitOn: "Id");
+                return result.ToList();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw ex;
+            }
+        }
+        public async ValueTask<List<OrdersByDates>> GetSumSalesBetweenDates(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var result = await connection.QueryAsync<OrdersByDates, Store, Product, Category, int, decimal, OrdersByDates>(
+                    SpName.SumSalesBetweenDates,
+                    (o, s, p, c, co, ca) =>
+                    {
+                        OrdersByDates order = o;
+                        o.Store = s;
+                        o.Count = co;
+                        o.Cash = ca;
+                        o.Product = p;
+                        p.Category = c;
+                        return order;
+                    },
+                    param: new { FromDate = startDate, ToDate = endDate },
+                    commandType: CommandType.StoredProcedure,
+                    splitOn: "Id,Id,Id,Count,Cash");
+                return result.ToList();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async ValueTask<Order> GetTotalCostByIsForeign()
+        {
+            try
+            {
+                var result = await connection.QueryAsync<Order>(
+                    SpName.SalesInSomeCountry,
+                    param: null,
+                    commandType: CommandType.StoredProcedure);
                 return result.FirstOrDefault();
             }
             catch (InvalidOperationException ex)
@@ -146,6 +112,5 @@ namespace CRM.DB.Storages
                 throw ex;
             }
         }
-
     }
 }

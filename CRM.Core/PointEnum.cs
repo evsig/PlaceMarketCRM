@@ -2,10 +2,10 @@
 {
     public enum PointEnum
     {
-        Msk = 1,
-        Kiev,
+        SPb = 1,
+        Moscow,
         Minsk,
-        Storage,
-        Spb
+        Kiev,
+        Storage
     }
 }

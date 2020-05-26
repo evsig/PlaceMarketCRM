@@ -2,6 +2,6 @@
 {
     public interface IUrlOptions
     {
-        string CurrenciesApiUrl { get; set; }
+        string CrmApiUrl { get; set; }
     }
 }

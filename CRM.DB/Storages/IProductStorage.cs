@@ -7,9 +7,8 @@ namespace CRM.DB.Storages
 {
     public interface IProductStorage
     {
-        ValueTask<Product> GetProductById(int id);
-        ValueTask<List<PointMostlySalesProduct>> GetProductsMostlySales();
-        ValueTask<List<CategoryCountProducts>> GetCategoriesMoreFiveProducts();
-        ValueTask<Product> GetProductsWithCategory(ReportEnum reportType);
+        ValueTask<List<MostlySaleProduct>> GetBestSellingProductByCity();
+        ValueTask<List<Product>> GetProductWithCategoryReport(ReportTypeEnum reportType);
+        ValueTask<List<СategoryProduct>> CategoriesMoreFiveProducts(ReportTypeEnum reportType);
     }
 }

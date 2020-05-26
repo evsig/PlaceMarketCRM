@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace CRM.DB.Models
@@ -8,7 +7,7 @@ namespace CRM.DB.Models
     {
         public int? Id { get; set; }
         public DateTime Date { get; set; }
-        public Point Point { get; set; }
+        public Store Store { get; set; }
         public List<OrderDetails> OrderDetails { get; set; }
     }
 }

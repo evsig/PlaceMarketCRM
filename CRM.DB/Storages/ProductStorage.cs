@@ -1,55 +1,114 @@
-﻿using CRM.DB.Models;
-using Dapper;
+﻿using Dapper;
+using CRM.Core;
+using CRM.DB.Models;
 using System;
-using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using CRM.Core.ConfigurationOptions;
 
 namespace CRM.DB.Storages
 {
     public class ProductStorage : IProductStorage
     {
-		//private const string dbconnectionString = @"Data Source=EVS1G-MASH1N3;
-		//	Initial Catalog=DevEduHomeWork;
-		//	Integrated Security=True;
-		//	Connect Timeout=30;
-		//	Encrypt=False;
-		//	TrustServerCertificate=False;
-		//	ApplicationIntent=ReadWrite;
-		//	MultiSubnetFailover=False";
 
-		private IDbConnection _connection;
+        private IDbConnection connection;
 
-		public ProductStorage(IOptions<StorageOptions> storageOptions)
-		{
-			_connection = new SqlConnection(storageOptions.Value.DBConnectionString);
-		}
-
-		internal static class SpName
+        public ProductStorage(IOptions<StorageOptions> storageOptions)
         {
-            public const string ProductsGetAll = "Product_SelectAll";
-            public const string ProductGetById = "Product_GetById";
+            this.connection = new SqlConnection(storageOptions.Value.DBConnectionString);
         }
 
-		public async ValueTask<Product> ProductGetById(int? id)
-		{
-			try
-			{
-				DynamicParameters param = new DynamicParameters(new { id });
-				var result = await _connection.QueryAsync<Product>(
-					SpName.ProductGetById,
-					param,
-					commandType: CommandType.StoredProcedure);
-				return result.FirstOrDefault();
-			}
-			catch (SqlException ex)
-			{
-				throw ex;
-			}
-		}
-	}
+        private static class SpName
+        {
+            public const string CategoriesMoreFiveProducts = "CategoriesMoreFiveProducts";
+            public const string ProductMostlySales = "Product_MostlySales";
+            public const string ProductNeverSale = "Product_NeverSale";
+            public const string ProductOnlyInStorage = "Product_OnlyInStorage";
+            public const string ProductOver = "Product_Over";
+        }
+
+        public async ValueTask<List<MostlySaleProduct>> GetBestSellingProductByCity()
+        {
+            try
+            {
+                var result = await connection.QueryAsync<MostlySaleProduct, int, MostlySaleProduct>(
+                    SpName.ProductMostlySales,
+                   (w, g) =>
+                   {
+                       MostlySaleProduct store = w;
+                       store.ProductId = g;
+                       return store;
+                   },
+                    param: null,
+                    commandType: CommandType.StoredProcedure,
+                    splitOn: "ProductId");
+                return result.ToList();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async ValueTask<List<Product>> GetProductWithCategoryReport(ReportTypeEnum reportType)
+        {
+            string proc = "";
+            switch (reportType)
+            {
+                case ReportTypeEnum.GetProductNeverSale:
+                    proc = SpName.ProductNeverSale;
+                    break;
+                case ReportTypeEnum.GetProductOver:
+                    proc = SpName.ProductOver;
+                    break;
+                case ReportTypeEnum.GetProductOnlyInStorage:
+                    proc = SpName.ProductOnlyInStorage;
+                    break;
+            }
+
+            try
+            {
+                var result = await connection.QueryAsync<Category, Product, Product>(
+                    proc,
+                    (c, p) =>
+                    {
+                        Product product = p;
+                        product.Category = c;
+                        return product;
+                    },
+                    param: null,
+                    commandType: CommandType.StoredProcedure);
+                return result.ToList();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async ValueTask<List<СategoryProduct>> CategoriesMoreFiveProducts(ReportTypeEnum reportType)
+        {
+            try
+            {
+                var result = await connection.QueryAsync<СategoryProduct, int, СategoryProduct>(
+                    SpName.CategoriesMoreFiveProducts,
+                    (c, p) =>
+                    {
+                        СategoryProduct category = c;
+                        category.CountProducts = p;
+                        return category;
+                    },
+                    commandType: CommandType.StoredProcedure);
+                return result.ToList();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw ex;
+            }
+        }
+    }
 }
