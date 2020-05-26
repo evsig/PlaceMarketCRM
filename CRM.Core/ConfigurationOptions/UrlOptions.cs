@@ -2,6 +2,6 @@
 {
     public class UrlOptions : IUrlOptions
     {
-        public string CurrenciesApiUrl { get; set; }
+        public string CrmApiUrl { get; set; }
     }
 }

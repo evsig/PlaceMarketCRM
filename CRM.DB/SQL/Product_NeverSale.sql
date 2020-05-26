@@ -1,10 +1,10 @@
-﻿drop procedure if exists dbo.Product_NeverSale
-go
-create proc [dbo].[Product_NeverSale]
+DROP PROC IF EXISTS dbo.Product_NeverSale
+GO
 
-as
+CREATE PROC dbo.Product_NeverSale
+AS
 begin
 	select p.[Name], p.Price from Product p 
-	left join Order_Product op on op.GoodId=P.Id 
-	where op.GoodId is null;
+	left join Order_Product op on op.ProductId=P.Id 
+	where op.ProductId is null;
 end
